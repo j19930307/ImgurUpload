@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Imgur Upload</string>
+    <string name="image_delete">刪除在Imgur上的圖片</string>>
+    <string name="image_delete_content">確定要刪除這個圖片?</string>
+    <string name="ok">確定</string>
+    <string name="cancel">取消</string>
+    <string name="title_activity_image_upload">ImageUploadActivity</string>
+    <string name="title_activity_album_acticity">AlbumActicity</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_main2">Main2Activity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="photo">圖片</string>
+    <string name="album">相簿</string>
+    <string name="title_activity_image_details">ImageDetailsActivity</string>
+    <string name="create_album">建立相簿</string>
+    <string name="share">分享</string>
+    <string name="copy_to_clipboard">已複製到剪貼簿</string>
+    <string name="select_photos">選取圖片</string>
+    <string name="not_install_picture_viewer">未安裝圖片瀏覽程式</string>
+    
+    <string-array name="photo_long_press_options">
+        <item>複製</item>
+        <item>刪除</item>
+        <item>分享</item>
+    </string-array>
+
+</resources>
