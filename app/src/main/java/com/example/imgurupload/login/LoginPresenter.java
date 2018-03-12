@@ -31,7 +31,7 @@ public class LoginPresenter implements LoginContract.Presenter {
         loginModel.getAccountId(new Callback<Account>() {
             @Override
             public void onResponse(Call<Account> call, Response<Account> response) {
-                        //Toast.makeText(LoginActivity.this, response.message(), Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(MainActivity.this, response.message(), Toast.LENGTH_SHORT).show();
                         loginModel.saveAccountBase(response.body());
                         loginView.navigateToMainActivity();
             }

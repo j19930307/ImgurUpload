@@ -21,7 +21,7 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <activity android:name=".main.LoginActivity">
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -36,7 +36,7 @@
             android:name=".CreateAlbumActivity"
             android:label="相簿上傳" />
         <activity
-            android:name=".main.MainActivity">
+            android:name=".home.HomeActivity">
         </activity>
         <activity android:name=".login.LoginActivity" />
         <activity

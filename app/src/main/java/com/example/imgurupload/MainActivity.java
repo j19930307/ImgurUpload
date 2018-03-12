@@ -1,4 +1,4 @@
-package com.example.imgurupload.main;
+package com.example.imgurupload;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,12 +7,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
-import com.example.imgurupload.ActivityUtils;
-import com.example.imgurupload.R;
+import com.example.imgurupload.home.HomeActivity;
 import com.example.imgurupload.login.AccountManager;
+import com.example.imgurupload.login.LoginActivity;
 
-
-public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     Button login;
     AccountManager accountManager;
@@ -23,20 +22,25 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         setContentView(R.layout.activity_init);
 
         accountManager = AccountManager.getInstance(this);
-        if(accountManager.isLogin()) {
+
+        if (accountManager.isLogin()) {
             navigationToMainActivity();
         }
         login = findViewById(R.id.btn_login);
         login.setOnClickListener(this);
-
     }
 
     @Override
     public void onClick(View view) {
-        startActivity(new Intent(LoginActivity.this, com.example.imgurupload.login.LoginActivity.class));
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
     }
 
     public void navigationToMainActivity() {
-        startActivity(new Intent(this, MainActivity.class));
+        Intent intent = new Intent(this, HomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
     }
 }

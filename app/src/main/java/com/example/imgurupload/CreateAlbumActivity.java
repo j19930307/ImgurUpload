@@ -15,14 +15,11 @@ import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -33,7 +30,7 @@ import com.example.imgurupload.api.ImgurApiService;
 import com.example.imgurupload.api.ProgressRequestBody;
 import com.example.imgurupload.api.RetrofitService;
 import com.example.imgurupload.image.Image;
-import com.example.imgurupload.main.MainActivity;
+import com.example.imgurupload.home.HomeActivity;
 import com.loopj.android.http.Base64;
 
 import java.io.ByteArrayOutputStream;
@@ -49,9 +46,6 @@ import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static com.example.imgurupload.R.id.album;
-import static com.example.imgurupload.R.id.image;
 
 public class CreateAlbumActivity extends AppCompatActivity implements ProgressRequestBody.UploadCallbacks {
     private RecyclerView recyclerView;
@@ -269,7 +263,7 @@ public class CreateAlbumActivity extends AppCompatActivity implements ProgressRe
                                 uploadImage(albumId);
                             } else {
                                 //progressBar.setVisibility(View.GONE);
-                                startActivity(new Intent(CreateAlbumActivity.this, MainActivity.class));
+                                startActivity(new Intent(CreateAlbumActivity.this, HomeActivity.class));
                             }
                         }
 

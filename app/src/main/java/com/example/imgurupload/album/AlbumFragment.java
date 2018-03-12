@@ -2,32 +2,20 @@ package com.example.imgurupload.album;
 
 import android.app.FragmentTransaction;
 import android.os.Bundle;
-import android.app.Fragment;
-import android.support.v7.app.AlertDialog;
-import android.view.ActionMode;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.example.imgurupload.AlertDialogFragment;
 import com.example.imgurupload.BaseResponse;
-import com.example.imgurupload.ImageDBHelper;
-import com.example.imgurupload.ItemClickListener;
 import com.example.imgurupload.R;
-import com.example.imgurupload.UploadService;
 import com.example.imgurupload.api.ImgurApiService;
 import com.example.imgurupload.api.RetrofitService;
 import com.example.imgurupload.fragment.BaseFragment;
-import com.example.imgurupload.image.ImageFragment;
 import com.example.imgurupload.image.ImgurListener;
-import com.example.imgurupload.main.MainActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +23,6 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static android.content.Context.CLIPBOARD_SERVICE;
 
 public class AlbumFragment extends BaseFragment implements Callback<Album>, ImgurListener, AlertDialogFragment.AlertDialogListener {
 

@@ -5,6 +5,7 @@ import com.example.imgurupload.album.Album;
 import com.example.imgurupload.album.Albums;
 import com.example.imgurupload.image.Image;
 import com.example.imgurupload.login.Account;
+import com.example.imgurupload.response.Avatar;
 
 import java.io.File;
 import java.util.List;
@@ -53,5 +54,8 @@ public interface ImgurApiService {
 
     @DELETE("album/{albumHash}")
     Call<BaseResponse> deleteAlbum(@Path("albumHash") String albumHash);
+
+    @GET("account/{username}/avatar")
+    Call<Avatar> getAvatar(@Path("username") String username);
 
 }

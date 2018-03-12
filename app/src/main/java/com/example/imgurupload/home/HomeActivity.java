@@ -1,60 +1,49 @@
-package com.example.imgurupload.main;
+package com.example.imgurupload.home;
 
-import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.design.widget.BottomSheetBehavior;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.webkit.WebView;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.imgurupload.ImgurAPI;
+import com.bumptech.glide.Glide;
+import com.example.imgurupload.MainActivity;
 import com.example.imgurupload.album.AlbumFragment;
 import com.example.imgurupload.api.ImgurApiService;
 import com.example.imgurupload.api.RetrofitService;
-import com.example.imgurupload.image.Image;
 import com.example.imgurupload.image.ImageFragment;
-import com.example.imgurupload.image.ImageManager;
 import com.example.imgurupload.login.AccountManager;
 import com.example.imgurupload.login.LoginActivity;
 import com.example.imgurupload.R;
-import com.google.gson.Gson;
+import com.example.imgurupload.response.Avatar;
 
-import java.util.List;
-
-import cz.msebera.android.httpclient.auth.AUTH;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 import static android.app.FragmentManager.POP_BACK_STACK_INCLUSIVE;
 
-public class MainActivity extends AppCompatActivity implements MainContract.View,
+public class HomeActivity extends AppCompatActivity implements HomeContract.View,
         NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
-    MainPresenter mainPresenter;
+    HomePresenter homePresenter;
 
     DrawerLayout drawer;
     NavigationView navigationView;
     LinearLayout header;
-    TextView profileName;
+    TextView accountName;
+    ImageView avatarImage;
     Toolbar toolbar;
     FloatingActionButton fab;
     ProgressBar progressBar;
@@ -81,32 +70,38 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         navigationView = findViewById(R.id.nav_view);
         if (navigationView.getHeaderCount() > 0) {
             header = navigationView.getHeaderView(0).findViewById(R.id.header);
-            profileName = navigationView.getHeaderView(0).findViewById(R.id.profile_name);
+            avatarImage = header.findViewById(R.id.avatar_image);
+            accountName = header.findViewById(R.id.account);
 
         }
         navigationView.setNavigationItemSelectedListener(this);
         drawer = findViewById(R.id.drawer);
 
-        mainPresenter = new MainPresenter(this, new MainModel());
+        homePresenter = new HomePresenter(this, new HomeModel());
 
         if(AccountManager.getInstance(this).isLogin()) {
-            profileName.setText(AccountManager.getInstance(this).getAccountName());
+            accountName.setText(AccountManager.getInstance(this).getAccountName());
         }
+
+        getAvatar();
 
         header.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mainPresenter.clickToLogin();
+                homePresenter.clickToLogin();
             }
         });
 
-        mainPresenter.showFragment(this);
+        homePresenter.showFragment(this);
 
         fab.setOnClickListener(this);
     }
 
     @Override
     public void showNotLogin() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
     }
 
     @Override
@@ -140,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     @Override
     public void popUpLoginPage() {
         drawer.closeDrawers();
-        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
         startActivityForResult(intent, AUTHORIZATION);
     }
 
@@ -161,8 +156,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         if(resultCode != RESULT_CANCELED) {
             switch (requestCode) {
                 case AUTHORIZATION:
-                    profileName.setText(AccountManager.getInstance(this).getAccountName());
-                    mainPresenter.showFragment(this);
+                    accountName.setText(AccountManager.getInstance(this).getAccountName());
+                    homePresenter.showFragment(this);
                     break;
             }
         }
@@ -182,9 +177,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                 loadAlbums();
                 break;
             case R.id.logout:
-                Toast.makeText(this, "logout", Toast.LENGTH_SHORT).show();
                 AccountManager.getInstance(this).clearCache();
-                mainPresenter.showFragment(this);
+                homePresenter.showFragment(this);
                 break;
             default:
                 Toast.makeText(this, "other", Toast.LENGTH_SHORT).show();
@@ -199,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     public void showBottomSheetDialog() {
-        MainBottomSheetDialogFragment mainBottomSheetDialogFragment = new MainBottomSheetDialogFragment();
+        HomeBottomSheetDialogFragment mainBottomSheetDialogFragment = new HomeBottomSheetDialogFragment();
         mainBottomSheetDialogFragment.show(getSupportFragmentManager(), mainBottomSheetDialogFragment.getTag());
     }
 
@@ -211,5 +205,29 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     public void hideProgressBar() {
         progressBar.setVisibility(View.GONE);
     }
+
+
+
+    private void getAvatar() {
+
+        String username = AccountManager.getInstance(this).getAccountName();
+
+        RetrofitService.getInstance(this).createApi(ImgurApiService.class).getAvatar(username)
+                .enqueue(new Callback<Avatar>() {
+                    @Override
+                    public void onResponse(Call<Avatar> call, Response<Avatar> response) {
+                        String url = response.body().getData().getAvatar();
+                        Glide.with(HomeActivity.this).load(url).into(avatarImage);
+                    }
+
+                    @Override
+                    public void onFailure(Call<Avatar> call, Throwable t) {
+
+                    }
+                });
+    }
+
+
+
 
 }
