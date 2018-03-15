@@ -109,5 +109,6 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
 
     public void remove(int selected) {
         album.remove(selected);
+        notifyDataSetChanged();
     }
 }

@@ -2,6 +2,9 @@ package com.example.imgurupload.home;
 
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.ResultReceiver;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -19,6 +22,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.imgurupload.MainActivity;
+import com.example.imgurupload.UploadService;
 import com.example.imgurupload.album.AlbumFragment;
 import com.example.imgurupload.api.ImgurApiService;
 import com.example.imgurupload.api.RetrofitService;
@@ -28,6 +32,8 @@ import com.example.imgurupload.login.LoginActivity;
 import com.example.imgurupload.R;
 import com.example.imgurupload.response.Avatar;
 
+import java.util.ArrayList;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -35,7 +41,7 @@ import retrofit2.Response;
 import static android.app.FragmentManager.POP_BACK_STACK_INCLUSIVE;
 
 public class HomeActivity extends AppCompatActivity implements HomeContract.View,
-        NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+        NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, HomeBottomSheetDialogFragment.UploadListener {
 
     HomePresenter homePresenter;
 
@@ -46,26 +52,33 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
     ImageView avatarImage;
     Toolbar toolbar;
     FloatingActionButton fab;
+    LinearLayout progressView;
     ProgressBar progressBar;
+    TextView progressText;
 
     private static final int AUTHORIZATION = 100;
 
     private static final String IMAGE = "image";
     private static final String ALBUM = "album";
 
-    private String type;
+    public static final int UPLOADING = 100;
+    public static final int UPLOAD_SUCCESS = 200;
+    public static final int UPLOAD_FAIL = 300;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_home);
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         fab = findViewById(R.id.fab);
-        progressBar = findViewById(R.id.progressBar);
+        progressView = findViewById(R.id.progress_view);
+        progressBar = findViewById(R.id.progress_bar);
+        progressText = findViewById(R.id.progress_text);
 
         getIntent().getStringExtra(IMAGE);
+
 
         navigationView = findViewById(R.id.nav_view);
         if (navigationView.getHeaderCount() > 0) {
@@ -79,7 +92,7 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
 
         homePresenter = new HomePresenter(this, new HomeModel());
 
-        if(AccountManager.getInstance(this).isLogin()) {
+        if (AccountManager.getInstance(this).isLogin()) {
             accountName.setText(AccountManager.getInstance(this).getAccountName());
         }
 
@@ -91,8 +104,11 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
                 homePresenter.clickToLogin();
             }
         });
-
-        homePresenter.showFragment(this);
+        if ("album".equals(getIntent().getStringExtra("album"))) {
+            loadAlbums();
+        } else {
+            homePresenter.showFragment(this);
+        }
 
         fab.setOnClickListener(this);
     }
@@ -107,12 +123,12 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
     @Override
     public void loadPhotos() {
         setTitle(R.string.photo);
-        if(getFragmentManager().findFragmentByTag("imageFragment") != null) {
+        if (getFragmentManager().findFragmentByTag("imageFragment") != null) {
             getFragmentManager().popBackStackImmediate("imageFragment", POP_BACK_STACK_INCLUSIVE);
         }
-            FragmentTransaction ft = getFragmentManager().beginTransaction();
-            ft.replace(R.id.fragment_container, ImageFragment.newInstance(""));
-            ft.commit();
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.replace(R.id.fragment_container, ImageFragment.newInstance(""));
+        ft.commit();
     }
 
     @Override
@@ -153,7 +169,7 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(resultCode != RESULT_CANCELED) {
+        if (resultCode != RESULT_CANCELED) {
             switch (requestCode) {
                 case AUTHORIZATION:
                     accountName.setText(AccountManager.getInstance(this).getAccountName());
@@ -197,21 +213,8 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
         mainBottomSheetDialogFragment.show(getSupportFragmentManager(), mainBottomSheetDialogFragment.getTag());
     }
 
-    public void showProgress(int percent) {
-        progressBar.setVisibility(View.VISIBLE);
-        progressBar.setProgress(percent);
-    }
-
-    public void hideProgressBar() {
-        progressBar.setVisibility(View.GONE);
-    }
-
-
-
     private void getAvatar() {
-
         String username = AccountManager.getInstance(this).getAccountName();
-
         RetrofitService.getInstance(this).createApi(ImgurApiService.class).getAvatar(username)
                 .enqueue(new Callback<Avatar>() {
                     @Override
@@ -227,7 +230,36 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
                 });
     }
 
+    @Override
+    public void onUpload(ArrayList<Uri> uris) {
 
+        final int total = uris.size();
 
+        ResultReceiver resultReceiver = new ResultReceiver(new Handler()) {
+            @Override
+            protected void onReceiveResult(int resultCode, Bundle resultData) {
+                switch (resultCode) {
+                    case UPLOADING:
+                        progressView.setVisibility(View.VISIBLE);
+                        progressBar.setProgress(resultData.getInt("progress"));
+                        progressText.setText(String.format("%d/%d", resultData.getInt("num"), total));
+                        drawer.setVisibility(View.GONE);
+                        break;
+                    case UPLOAD_SUCCESS:
+                        progressView.setVisibility(View.GONE);
+                        drawer.setVisibility(View.VISIBLE);
+                        loadPhotos();
+                        break;
+                    case UPLOAD_FAIL:
+                        Toast.makeText(HomeActivity.this, R.string.upload_failed, Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        };
 
+        Intent intent = new Intent(HomeActivity.this, UploadService.class);
+        intent.putParcelableArrayListExtra("images", uris);
+        intent.putExtra("receiver", resultReceiver);
+        startService(intent);
+    }
 }

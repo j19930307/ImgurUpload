@@ -24,6 +24,7 @@
     <string name="copy_to_clipboard">已複製到剪貼簿</string>
     <string name="select_photos">選取圖片</string>
     <string name="not_install_picture_viewer">未安裝圖片瀏覽程式</string>
+    <string name="upload_failed">上船失敗</string>
     
     <string-array name="photo_long_press_options">
         <item>複製</item>

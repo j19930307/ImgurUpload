@@ -43,6 +43,9 @@
             android:name=".image.ImageDetailsActivity"
             android:label="@string/title_activity_image_details"
             android:theme="@style/AppTheme"></activity>
+
+        <service android:name=".UploadService"/>
+
     </application>
 
 </manifest>

@@ -1,248 +1,137 @@
 package com.example.imgurupload;
 
-import android.app.ProgressDialog;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.ResultReceiver;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.example.imgurupload.album.Album;
-import com.example.imgurupload.album.AlbumAdapter;
-import com.example.imgurupload.image.ImageAdapter;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.JsonHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
+import com.example.imgurupload.api.ImgurApiService;
+import com.example.imgurupload.api.ProgressRequestBody;
+import com.example.imgurupload.api.RetrofitService;
+import com.example.imgurupload.image.Image;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.Executors;
 
-import cz.msebera.android.httpclient.Header;
+import okhttp3.FormBody;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Response;
 
-import static com.example.imgurupload.ImgurAPI.CLIENT_ID;
-import static com.example.imgurupload.ImgurAPI.ALBUM_ROUTE;
-import static com.example.imgurupload.ImgurAPI.IMAGE_ROUTE;
+import static com.example.imgurupload.home.HomeActivity.UPLOADING;
+import static com.example.imgurupload.home.HomeActivity.UPLOAD_FAIL;
+import static com.example.imgurupload.home.HomeActivity.UPLOAD_SUCCESS;
 
-//Use Android Asynchronous Http Client to connect Imgur API
+public class UploadService extends IntentService implements ProgressRequestBody.UploadCallbacks {
 
-public class UploadService {
+    private static final String TAG = UploadService.class.getSimpleName();
+    private static final String IMAGES = "images";
+    private static final String TITLE = "title";
 
-    AsyncHttpClient client = new AsyncHttpClient();
-    private Context mContext;
-    private int index = 0;
-    private ImageDBHelper imagedb;
-    private String album_deletehash = null;
-    private int count = 0;
-    ProgressDialog progress;
+    ResultReceiver resultReceiver;
+    int total = 0;
+    int num = 0;
 
-    public UploadService(Context context) {
-        this.mContext = context;
-        client.addHeader("Authorization", "Client-ID " + CLIENT_ID);
-        client.setConnectTimeout(10 * 1000);
-        client.setThreadPool(Executors.newSingleThreadExecutor());
-        //client.setThreadPool(Executors.newFixedThreadPool(3));
+    public UploadService() {
+        super(TAG);
     }
 
-    //Upload a new image and store some information by sqlite
-    public void post(final String[] images) {
+    public static Intent createIntent(Context context, ArrayList<Uri> images, String title) {
+        Intent intent = new Intent(context, UploadService.class)
+                .putExtra(IMAGES, images);
+        if (!TextUtils.isEmpty(title)) intent.putExtra(TITLE, title);
+        return intent;
+    }
 
-        if (isNetworkConnected()) {
-            progress = new ProgressDialog(mContext);
-            progress.setProgress(0);
-            progress.setMessage("上傳中");
-            progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            progress.setCancelable(false);
-            progress.setIndeterminate(false);
-            progress.setMax(images.length);
-            progress.show();
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
 
-            RequestParams params = new RequestParams();
-            for (int i = 0; i < images.length; i++) {
-                params.put("image", images[i]);
-                params.put("album", album_deletehash);
+        resultReceiver = intent.getParcelableExtra("receiver");
+        ArrayList<Uri> uris = intent.getParcelableArrayListExtra(IMAGES);
+        String title = intent.getStringExtra(TITLE);
+        String albumId = null;
 
-                client.post(IMAGE_ROUTE, params, new AsyncHttpResponseHandler() {
-
-                    @Override
-                    public void onStart() {
-                        super.onStart();
-                    }
-
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                        try {
-                            JSONObject response = new JSONObject(new String(responseBody));
-                            JSONObject data = response.getJSONObject("data");
-                            String link = data.getString("link");
-                            String title = data.getString("title");
-                            int size = data.getInt("size");
-                            String deletehash = data.getString("deletehash");
-                            Log.v("Success", link + " " + title + " " + String.valueOf(size) + " " + deletehash);
-                            imagedb = new ImageDBHelper(mContext);
-                            index++;
-                            imagedb.insertImageDetail(link, title, size, deletehash, album_deletehash);
-                            imagedb.close();
-                            synchronized (this) {
-                                if (index == images.length) {
-                                    progress.dismiss();
-                                    Intent intent = new Intent(mContext, UploadHistoryActivity.class);
-                                    if(album_deletehash!=null)
-                                        intent.putExtra("position", "album");
-                                    mContext.startActivity(intent);
-                                }
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onProgress(long bytesWritten, long totalSize) {
-                        progress.setProgress(index);
-                        super.onProgress(bytesWritten, totalSize);
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                    }
-
-                    @Override
-                    public void onRetry(int retryNo) {
-                        super.onRetry(retryNo);
-                    }
-                });
-            }
+        if (title != null) {
+            albumId = createAlbum(title);
+            uploadPhotos(uris, albumId);
         } else {
-            Toast.makeText(mContext, "網路未連接", Toast.LENGTH_SHORT).show();
+            uploadPhotos(uris, null);
         }
     }
 
-    /*
-    //Delete an image on Imgur and local database data
-    public void deleteImage(final ImageAdapter imagesAdapter, final ArrayList<Image> imageArrayList) {
-        if (isNetworkConnected()) {
-            progress = new ProgressDialog(mContext);
-            progress.setMessage("刪除中");
-            progress.show();
+    private void uploadPhotos(ArrayList<Uri> uris, String albumId) {
+        total = uris.size();
 
-            final ArrayList<Image> images = new ArrayList<>();
-            for (int i = 0; i < imagesAdapter.getItemCount(); i++) {
-                if (imagesAdapter.getSelectedItemIds().get(i)) {
-                    images.add(imageArrayList.get(i));
+        for (Uri uri : uris) {
+            Response<Image.DataBean> response = null;
+            try {
+                File file = new File(FileUitls.getPath(this, uri));
+                MultipartBody.Builder builder = new MultipartBody.Builder();
+                ProgressRequestBody fileBody = new ProgressRequestBody(file, this);
+                builder.addFormDataPart("image", file.getName(), fileBody);
+                builder.addFormDataPart("type", "file");
+                if (albumId != null)
+                    builder.addFormDataPart("album", albumId);
+                builder.addFormDataPart("name", file.getName());
+                builder.setType(MultipartBody.FORM);
+                MultipartBody multipartBody = builder.build();
+
+                response = RetrofitService.getInstance(this).createApi(ImgurApiService.class)
+                        .uploadImage(multipartBody).execute();
+
+                num++;
+
+                if (!response.isSuccessful()) {
+                    resultReceiver.send(UPLOAD_FAIL, null);
+                } else {
+                    if (num >= total) {
+                        resultReceiver.send(UPLOAD_SUCCESS, null);
+                    }
                 }
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            for (final Image image : images) {
-                client.delete(IMAGE_ROUTE + "/" + image.getDeletehash(), new JsonHttpResponseHandler() {
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                        super.onSuccess(statusCode, headers, response);
-                        Log.v("Delete Image", response.toString());
-                        count++;
-                        imagedb = new ImageDBHelper(mContext);
-                        imagedb.deleteImage(image.getDeletehash());
-                        imageArrayList.remove(image);
-                        synchronized (this) {
-                            if (count == images.size()) {
-                                imagesAdapter.notifyDataSetChanged();
-                                progress.dismiss();
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                        super.onFailure(statusCode, headers, throwable, errorResponse);
-                    }
-                });
-            }
-        } else {
-            Toast.makeText(mContext, "網路未連接", Toast.LENGTH_SHORT).show();
-        }
-    }*/
-
-    //Post an album to Imgur
-    public void albumPost(final String title, final String[] base64Images) {
-        if (isNetworkConnected()) {
-            RequestParams params = new RequestParams();
-            params.put("title", title);
-            client.post(ALBUM_ROUTE, params, new JsonHttpResponseHandler() {
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                    super.onSuccess(statusCode, headers, response);
-                    try {
-                        JSONObject data = response.getJSONObject("data");
-                        String id = data.getString("id");
-                        String deletehash = data.getString("deletehash");
-                        album_deletehash = deletehash;
-                        imagedb = new ImageDBHelper(mContext);
-                        imagedb.insertAlbumDetail(id, deletehash, title);
-                        imagedb.close();
-                        post(base64Images);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                    super.onFailure(statusCode, headers, throwable, errorResponse);
-                }
-            });
-        } else {
-            Toast.makeText(mContext, "網路未連接", Toast.LENGTH_SHORT).show();
         }
     }
 
-    //delete selected album
-    /*public void deleteAlbum(final AlbumAdapter albumAdapter, final ArrayList<Album> albumArrayList) {
-        if (isNetworkConnected()) {
-            progress = new ProgressDialog(mContext);
-            progress.setMessage("刪除中");
-            progress.show();
-            final ArrayList<Album> albums = new ArrayList<>();
-            for (int i = 0; i < albumAdapter.getItemCount(); i++) {
-                if (albumAdapter.getSelectedItemIds().get(i)) {
-                    albums.add(albumArrayList.get(i));
-                }
-            }
-            for (final Album album : albums) {
-                client.delete(ALBUM_ROUTE + "/" + album.getDeletehash(), new JsonHttpResponseHandler() {
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                        super.onSuccess(statusCode, headers, response);
-                        Log.v("Delete Album", response.toString());
-                        count++;
-                        imagedb = new ImageDBHelper(mContext);
-                        imagedb.deleteAlbum(album.getDeletehash());
-                        imagedb.close();
-                        albumArrayList.remove(album);
-                        synchronized (this) {
-                            if (count == albums.size()) {
-                                albumAdapter.notifyDataSetChanged();
-                                progress.dismiss();
-                            }
-                        }
-                    }
+    private String createAlbum(String title) {
 
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                        super.onFailure(statusCode, headers, throwable, errorResponse);
-                    }
-                });
-            }
-        } else {
-            Toast.makeText(mContext, "網路未連接", Toast.LENGTH_SHORT).show();
+        Response<com.example.imgurupload.api.Response> response = null;
+
+        RequestBody requestBody = new FormBody.Builder()
+                .add("title", title)
+                .build();
+        try {
+            response = RetrofitService.getInstance(this)
+                    .createApi(ImgurApiService.class).createAlbum(requestBody).execute();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    }*/
+        Log.d("albumId", response.body().getData().getId());
+        return response.body().getData().getId();
+    }
 
-    public boolean isNetworkConnected() {
-        ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    @Override
+    public void onProgressUpdate(final int percentage) {
+        Log.d("percent", String.valueOf(percentage));
+        Bundle bundle = new Bundle();
+        bundle.putInt("num", num);
+        bundle.putInt("progress", percentage);
+        resultReceiver.send(UPLOADING, bundle);
+    }
+
+    @Override
+    public void onError() {
+    }
+
+    @Override
+    public void onFinish() {
     }
 }

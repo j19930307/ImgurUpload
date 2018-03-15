@@ -18,10 +18,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-/**
- * Created by Jason on 2018/1/2.
- */
-
 public class FileUitls {
 
     public FileUitls() {

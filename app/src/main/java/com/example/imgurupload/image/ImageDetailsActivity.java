@@ -24,6 +24,10 @@ public class ImageDetailsActivity extends AppCompatActivity implements Toolbar.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_details);
         Toolbar toolbar = findViewById(R.id.toolbar);
+
+        setTitle("圖片");
+        setTitleColor(R.color.black);
+
         setSupportActionBar(toolbar);
         toolbar.setOnMenuItemClickListener(this);
 

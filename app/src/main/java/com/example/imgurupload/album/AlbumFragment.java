@@ -101,7 +101,7 @@ public class AlbumFragment extends BaseFragment implements Callback<Album>, Imgu
     }
 
     private void deleteAlbum(String deleteHash) {
-        RetrofitService.getInstance(getActivity()).createApi(ImgurApiService.class).deleteImage(deleteHash)
+        RetrofitService.getInstance(getActivity()).createApi(ImgurApiService.class).deleteAlbum(deleteHash)
                 .enqueue(new Callback<BaseResponse>() {
                     @Override
                     public void onResponse(Call<BaseResponse> call, retrofit2.Response<BaseResponse> response) {
