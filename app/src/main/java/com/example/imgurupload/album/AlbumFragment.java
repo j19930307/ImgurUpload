@@ -1,6 +1,7 @@
 package com.example.imgurupload.album;
 
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -15,14 +16,19 @@ import com.example.imgurupload.R;
 import com.example.imgurupload.api.ImgurApiService;
 import com.example.imgurupload.api.RetrofitService;
 import com.example.imgurupload.fragment.BaseFragment;
+import com.example.imgurupload.image.Image;
+import com.example.imgurupload.image.ImageFragment;
 import com.example.imgurupload.image.ImgurListener;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static android.app.FragmentManager.POP_BACK_STACK_INCLUSIVE;
 
 public class AlbumFragment extends BaseFragment implements Callback<Album>, ImgurListener, AlertDialogFragment.AlertDialogListener {
 
@@ -59,7 +65,7 @@ public class AlbumFragment extends BaseFragment implements Callback<Album>, Imgu
     @Override
     public void onResponse(Call<Album> call, Response<Album> response) {
         Log.d("albums", response.toString());
-        if(response.isSuccessful()) {
+        if (response.isSuccessful()) {
             albumArrayList = response.body().getData();
             albumAdapter = new AlbumAdapter(albumArrayList, this);
             recyclerView.setAdapter(albumAdapter);
@@ -73,8 +79,11 @@ public class AlbumFragment extends BaseFragment implements Callback<Album>, Imgu
 
     @Override
     public void onPhotoClick(int position) {
-
+        final String albumId = albumArrayList.get(position).getId();
+        Intent intent = AlbumImagesActivity.createIntent(getActivity(), albumId);
+        startActivity(intent);
     }
+
 
     @Override
     public void onPhotoLongClick(int position) {

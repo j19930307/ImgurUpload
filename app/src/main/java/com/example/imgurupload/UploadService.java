@@ -33,6 +33,7 @@ public class UploadService extends IntentService implements ProgressRequestBody.
     private static final String TAG = UploadService.class.getSimpleName();
     private static final String IMAGES = "images";
     private static final String TITLE = "title";
+    private static final String ALBUM_ID = "album_id";
 
     ResultReceiver resultReceiver;
     int total = 0;
@@ -42,10 +43,23 @@ public class UploadService extends IntentService implements ProgressRequestBody.
         super(TAG);
     }
 
-    public static Intent createIntent(Context context, ArrayList<Uri> images, String title) {
+    public static Intent createImageIntent(Context context, ArrayList<Uri> images) {
         Intent intent = new Intent(context, UploadService.class)
                 .putExtra(IMAGES, images);
-        if (!TextUtils.isEmpty(title)) intent.putExtra(TITLE, title);
+        return intent;
+    }
+
+    public static Intent createAlbumIntent(Context context, ArrayList<Uri> images, String title) {
+        Intent intent = createImageIntent(context, images);
+        if (!TextUtils.isEmpty(title))
+            intent.putExtra(TITLE, title);
+        return intent;
+    }
+
+    public static Intent createAlbumImagesIntent(Context context, ArrayList<Uri> images, String albumId) {
+        Intent intent = createImageIntent(context, images);
+        if (!TextUtils.isEmpty(albumId))
+            intent.putExtra(ALBUM_ID, albumId);
         return intent;
     }
 
@@ -55,14 +69,12 @@ public class UploadService extends IntentService implements ProgressRequestBody.
         resultReceiver = intent.getParcelableExtra("receiver");
         ArrayList<Uri> uris = intent.getParcelableArrayListExtra(IMAGES);
         String title = intent.getStringExtra(TITLE);
-        String albumId = null;
+        String albumId = intent.getStringExtra(ALBUM_ID);
 
-        if (title != null) {
+        if(albumId == null && title != null) {
             albumId = createAlbum(title);
-            uploadPhotos(uris, albumId);
-        } else {
-            uploadPhotos(uris, null);
         }
+        uploadPhotos(uris, albumId);
     }
 
     private void uploadPhotos(ArrayList<Uri> uris, String albumId) {

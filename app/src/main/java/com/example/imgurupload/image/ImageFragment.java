@@ -49,7 +49,6 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 public class ImageFragment extends BaseFragment implements Callback<Image>, ImgurListener, AlertDialogFragment.AlertDialogListener {
 
     private static ImageFragment imageFragment;
-    private String albumHash;
     private ImageAdapter imageAdapter;
     GridLayoutManager layoutManager;
     private ArrayList<Image.DataBean> imageArrayList;
@@ -61,11 +60,8 @@ public class ImageFragment extends BaseFragment implements Callback<Image>, Imgu
 
     ProgressBar progressBar;
 
-    public static ImageFragment newInstance(String albumHash) {
+    public static ImageFragment newInstance() {
         imageFragment = new ImageFragment();
-        Bundle args = new Bundle();
-        args.putString("albumHash", albumHash);
-        imageFragment.setArguments(args);
         return imageFragment;
     }
 
@@ -82,12 +78,6 @@ public class ImageFragment extends BaseFragment implements Callback<Image>, Imgu
         recyclerView.setAdapter(imageAdapter);
         layoutManager = new GridLayoutManager(getActivity(), 3);
         recyclerView.setLayoutManager(layoutManager);
-
-        if (getArguments() != null) {
-            albumHash = getArguments().getString("albumHash");
-        }
-
-        if (TextUtils.isEmpty(albumHash)) {
 
             //ImageManager.getInstance(getActivity()).getImages(page, this);
             loadPhotos();
@@ -110,30 +100,8 @@ public class ImageFragment extends BaseFragment implements Callback<Image>, Imgu
                     super.onScrolled(recyclerView, dx, dy);
                 }
             });
-        } else {
-            loadAlbumPhotos();
-        }
 
         return rootView;
-    }
-
-    public void loadAlbumPhotos() {
-        progressBar.setVisibility(View.VISIBLE);
-        RetrofitService.getInstance(getActivity()).createApi(ImgurApiService.class).getAlbum("me", albumHash)
-                .enqueue(new Callback<Albums>() {
-                    @Override
-                    public void onResponse(Call<Albums> call, Response<Albums> response) {
-                        progressBar.setVisibility(View.GONE);
-                        Albums album = response.body();
-                        imageAdapter.addItems(new ArrayList(album.getData().getImages()));
-                    }
-
-                    @Override
-                    public void onFailure(Call<Albums> call, Throwable t) {
-                        Log.d("error", t.getMessage());
-                        progressBar.setVisibility(View.GONE);
-                    }
-                });
     }
 
     public void loadPhotos() {

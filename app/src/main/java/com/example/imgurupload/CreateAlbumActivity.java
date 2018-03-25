@@ -112,7 +112,7 @@ public class CreateAlbumActivity extends AppCompatActivity {
                     }
                 };
 
-                Intent intent = UploadService.createIntent(this, imagesPath, title);
+                Intent intent = UploadService.createAlbumIntent(this, imagesPath, title);
                 intent.putExtra("receiver", resultReceiver);
                 startService(intent);
                 return true;

@@ -11,7 +11,6 @@ public interface HomeContract {
         void showNotLogin();
         void loadPhotos();
         void loadAlbums();
-        void loadAlbumImage(String id);
         void popUpLoginPage();
         void navigateToMainActivity();
         void loginFailed();

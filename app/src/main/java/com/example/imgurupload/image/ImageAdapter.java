@@ -22,19 +22,19 @@ import java.util.List;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
 
-    private ArrayList<Image.DataBean> mImages;
+    private ArrayList<Image.DataBean> datas;
     private SparseBooleanArray mSelectedItemIds;
     private ImgurListener listener;
 
-    public ImageAdapter(ArrayList<Image.DataBean> mImages, ImgurListener listener) {
-        this.mImages = mImages;
+    public ImageAdapter(ArrayList<Image.DataBean> datas, ImgurListener listener) {
+        this.datas = datas;
         this.mSelectedItemIds = new SparseBooleanArray();
         this.listener = listener;
     }
 
     @Override
     public int getItemCount() {
-        return mImages.size();
+        return datas.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -68,7 +68,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
         } else
             holder.checkBox.setVisibility(View.VISIBLE);
 
-        final Image.DataBean image = mImages.get(position);
+        final Image.DataBean image = datas.get(position);
         if(image.getLink().toUpperCase().endsWith(".GIF")) {
             Glide.with(holder.mImageView.getContext())
                     .load(ImageUtils.resize(image.getLink(), ImageUtils.MEDIUM))
@@ -129,12 +129,17 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
     }
 
     public void addItems(ArrayList newItems) {
-        mImages.addAll(newItems);
+        datas.addAll(newItems);
+        notifyDataSetChanged();
+    }
+
+    public void update(ArrayList datas) {
+        this.datas = datas;
         notifyDataSetChanged();
     }
 
     public void remove(int position) {
-        mImages.remove(position);
+        datas.remove(position);
         notifyDataSetChanged();
     }
 }

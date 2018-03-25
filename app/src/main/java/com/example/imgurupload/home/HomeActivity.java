@@ -127,7 +127,7 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
             getFragmentManager().popBackStackImmediate("imageFragment", POP_BACK_STACK_INCLUSIVE);
         }
         FragmentTransaction ft = getFragmentManager().beginTransaction();
-        ft.replace(R.id.fragment_container, ImageFragment.newInstance(""));
+        ft.replace(R.id.fragment_container, ImageFragment.newInstance());
         ft.commit();
     }
 
@@ -136,15 +136,6 @@ public class HomeActivity extends AppCompatActivity implements HomeContract.View
         setTitle(R.string.album);
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.replace(R.id.fragment_container, new AlbumFragment());
-        ft.commit();
-    }
-
-    @Override
-    public void loadAlbumImage(String id) {
-        setTitle(R.string.photo);
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        ft.replace(R.id.fragment_container, ImageFragment.newInstance(id));
-        ft.addToBackStack("imageFragment");
         ft.commit();
     }
 

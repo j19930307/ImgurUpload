@@ -15,9 +15,12 @@ import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 
@@ -57,5 +60,14 @@ public interface ImgurApiService {
 
     @GET("account/{username}/avatar")
     Call<Avatar> getAvatar(@Path("username") String username);
+
+
+    //https://api.imgur.com/3/album/{{albumHash}}/images
+    @GET("album/{albumHash}/images")
+    Call<Image> getAlbumImages(@Path("albumHash") String albumHash);
+
+    @FormUrlEncoded
+    @PUT("album/{albumHash}")
+    Call<BaseResponse> updateAlbum(@Path("albumHash") String albumHash, @Field("title") String title);
 
 }
