@@ -21,7 +21,7 @@ public class RequestInterceptor implements Interceptor {
 
     @Override
     public Response intercept(Chain chain) throws IOException {
-        String accessToken = AccountManager.getInstance(MyApplication.getContext()).getAccessToken();
+        String accessToken = AccountManager.getInstance(MyApplication.getInstance()).getAccessToken();
         Request request = chain.request()
                 .newBuilder()
                 .addHeader("Authorization", TextUtils.isEmpty(accessToken) ? "Client-ID 559663b09041d88" : "Bearer " + accessToken)

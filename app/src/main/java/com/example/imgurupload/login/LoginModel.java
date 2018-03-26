@@ -32,7 +32,7 @@ public class LoginModel {
     }
 
     public void getAccountId(Callback<Account> callback) {
-        RetrofitService.getInstance(MyApplication.getContext()).createApi(ImgurApiService.class).getAccountBase("me")
+        RetrofitService.getInstance(MyApplication.getInstance()).createApi(ImgurApiService.class).getAccountBase("me")
                 .enqueue(callback);
 
     }

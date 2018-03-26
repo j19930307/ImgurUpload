@@ -36,8 +36,11 @@ public class UploadService extends IntentService implements ProgressRequestBody.
     private static final String ALBUM_ID = "album_id";
 
     ResultReceiver resultReceiver;
-    int total = 0;
-    int num = 0;
+    UploadNotification notification;
+
+    int total = 0;   // 全部數量
+    int num = 0;     // 正在傳第幾個
+    int success = 0; // 成功上傳數
 
     public UploadService() {
         super(TAG);
@@ -66,12 +69,13 @@ public class UploadService extends IntentService implements ProgressRequestBody.
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
 
+        notification = new UploadNotification(getApplicationContext());
         resultReceiver = intent.getParcelableExtra("receiver");
         ArrayList<Uri> uris = intent.getParcelableArrayListExtra(IMAGES);
         String title = intent.getStringExtra(TITLE);
         String albumId = intent.getStringExtra(ALBUM_ID);
 
-        if(albumId == null && title != null) {
+        if (albumId == null && title != null) {
             albumId = createAlbum(title);
         }
         uploadPhotos(uris, albumId);
@@ -82,35 +86,45 @@ public class UploadService extends IntentService implements ProgressRequestBody.
 
         for (Uri uri : uris) {
             Response<Image.DataBean> response = null;
+            notification.onUploading(total, num + 1);
             try {
-                File file = new File(FileUitls.getPath(this, uri));
-                MultipartBody.Builder builder = new MultipartBody.Builder();
-                ProgressRequestBody fileBody = new ProgressRequestBody(file, this);
-                builder.addFormDataPart("image", file.getName(), fileBody);
-                builder.addFormDataPart("type", "file");
-                if (albumId != null)
-                    builder.addFormDataPart("album", albumId);
-                builder.addFormDataPart("name", file.getName());
-                builder.setType(MultipartBody.FORM);
-                MultipartBody multipartBody = builder.build();
-
+                MultipartBody multipartBody = createImageBody(uri, albumId);
                 response = RetrofitService.getInstance(this).createApi(ImgurApiService.class)
                         .uploadImage(multipartBody).execute();
 
+                if (response.isSuccessful()) {
+                    success++;
+                }
                 num++;
 
-                if (!response.isSuccessful()) {
-                    resultReceiver.send(UPLOAD_FAIL, null);
-                } else {
-                    if (num >= total) {
+                if (num >= total) {
+                    if (success < total) {
+                        resultReceiver.send(UPLOAD_FAIL, null);
+                        notification.onFailUpload();
+                    } else {
                         resultReceiver.send(UPLOAD_SUCCESS, null);
+                        notification.onSuccessUpload();
                     }
                 }
 
             } catch (Exception e) {
                 e.printStackTrace();
+                notification.onFailUpload();
             }
         }
+    }
+
+    private MultipartBody createImageBody(Uri uri, String albumId) {
+        File file = new File(FileUitls.getPath(this, uri));
+        MultipartBody.Builder builder = new MultipartBody.Builder();
+        ProgressRequestBody fileBody = new ProgressRequestBody(file, this);
+        builder.addFormDataPart("image", file.getName(), fileBody);
+        builder.addFormDataPart("type", "file");
+        if (albumId != null)
+            builder.addFormDataPart("album", albumId);
+        builder.addFormDataPart("name", file.getName());
+        builder.setType(MultipartBody.FORM);
+        return builder.build();
     }
 
     private String createAlbum(String title) {

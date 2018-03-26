@@ -24,26 +24,19 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.imgurupload.BaseResponse;
-import com.example.imgurupload.CreateAlbumAdapter;
-import com.example.imgurupload.FileUitls;
 import com.example.imgurupload.ImageUtils;
 import com.example.imgurupload.R;
 import com.example.imgurupload.UploadService;
 import com.example.imgurupload.api.ImgurApiService;
-import com.example.imgurupload.api.ProgressRequestBody;
 import com.example.imgurupload.api.RetrofitService;
+import com.example.imgurupload.home.HomeActivity;
 import com.example.imgurupload.image.Image;
 import com.example.imgurupload.image.ImageAdapter;
 import com.example.imgurupload.image.ImgurListener;
 import com.example.imgurupload.login.AccountManager;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -239,7 +232,9 @@ public class AlbumImagesActivity extends AppCompatActivity implements ImgurListe
             @Override
             protected void onReceiveResult(int resultCode, Bundle resultData) {
                 super.onReceiveResult(resultCode, resultData);
-                loadAlbumPhotos(id);
+                if(resultCode == HomeActivity.UPLOAD_SUCCESS) {
+                    loadAlbumPhotos(id);
+                }
             }
         };
 

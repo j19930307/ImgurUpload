@@ -30,6 +30,10 @@
     <string name="update_failed">更新失敗</string>
     <string name="delete_failed">刪除失敗</string>
     <string name="add_photo">新增相片</string>
+    <string name="upload_completed">上傳完成</string>
+    <string name="start_upload">開始上傳</string>
+    <string name="uploading_title">正在上傳第%d張照片</string>
+    <string name="uploading_text">%d/%d</string>
 
     <string-array name="photo_long_press_options">
         <item>複製</item>
